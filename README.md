@@ -46,6 +46,7 @@ This is the easiest and most reliable way to run the application.
 
 **Prerequisites:**
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+* The raw data file (`train.csv`) downloaded from [Kaggle](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data) and placed in the root of the project folder.
 
 **Instructions:**
 1.  **Clone the repository:**
@@ -53,21 +54,33 @@ This is the easiest and most reliable way to run the application.
     git clone [https://github.com/your-username/toxicity-detector-api.git](https://github.com/your-username/toxicity-detector-api.git)
     cd toxicity-detector-api
     ```
-2.  **Build the Docker image:**
+2.  **Generate the Model Files:** The trained model files are not included in the repository. You must generate them first by running the training scripts.
+    ```bash
+    # First, set up a temporary Python environment to run the scripts
+    python -m venv venv
+    .\venv\Scripts\activate
+    pip install -r requirements.txt
+
+    # Run the data preparation and model training scripts
+    python main_data_prep.py
+    python train_model.py
+    ```
+3.  **Build the Docker image:**
     ```bash
     docker build -t toxicity-detector .
     ```
-3.  **Run the Docker container:**
+4.  **Run the Docker container:**
     ```bash
     docker run -p 5000:8000 toxicity-detector
     ```
-4.  Open your web browser and navigate to `http://127.0.0.1:5000`.
+5.  Open your web browser and navigate to `http://127.0.0.1:5000`.
 
 ### Option 2: Running with a Local Python Environment
 
 **Prerequisites:**
 * Python 3.9+
 * `pip` and `venv`
+* The raw data file (`train.csv`) downloaded from [Kaggle](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data) and placed in the root of the project folder.
 
 **Instructions:**
 1.  **Clone the repository:**
@@ -89,11 +102,16 @@ This is the easiest and most reliable way to run the application.
     ```bash
     pip install -r requirements.txt
     ```
-4.  **Run the Flask application:**
+4.  **Prepare data and train the model:**
+    ```bash
+    python main_data_prep.py
+    python train_model.py
+    ```
+5.  **Run the Flask application:**
     ```bash
     python app.py
     ```
-5.  Open your web browser and navigate to `http://127.0.0.1:5000`.
+6.  Open your web browser and navigate to `http://127.0.0.1:5000`.
 
 ---
 
