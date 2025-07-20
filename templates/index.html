@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Chat Toxicity Detector</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Simple transition for result display */
+        #result-box {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-2xl mx-auto p-8 bg-gray-800 rounded-2xl shadow-lg">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-cyan-400">Game Chat Toxicity Detector</h1>
+            <p class="text-gray-400 mt-2">Enter a message to analyze its toxicity level.</p>
+        </div>
+
+        <!-- Input Area -->
+        <div class="mb-6">
+            <textarea id="message-input" class="w-full h-32 p-4 bg-gray-700 border-2 border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition" placeholder="Type your chat message here..."></textarea>
+        </div>
+
+        <!-- Action Button -->
+        <div class="text-center mb-8">
+            <button id="analyze-button" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-full shadow-md hover:shadow-lg transition transform hover:scale-105">
+                Analyze Message
+            </button>
+        </div>
+
+        <!-- Result Display -->
+        <div id="result-box" class="p-6 bg-gray-700 rounded-lg text-center opacity-0 scale-95">
+            <h2 id="result-text" class="text-2xl font-semibold"></h2>
+            <p id="confidence-text" class="text-gray-400 mt-1"></p>
+        </div>
+    </div>
+
+    <script>
+        const messageInput = document.getElementById('message-input');
+        const analyzeButton = document.getElementById('analyze-button');
+        const resultBox = document.getElementById('result-box');
+        const resultText = document.getElementById('result-text');
+        const confidenceText = document.getElementById('confidence-text');
+
+        analyzeButton.addEventListener('click', async () => {
+            const message = messageInput.value;
+            if (message.trim() === '') {
+                alert('Please enter a message to analyze.');
+                return;
+            }
+
+            // Show a loading state
+            analyzeButton.disabled = true;
+            analyzeButton.textContent = 'Analyzing...';
+            resultBox.classList.add('opacity-0');
+
+
+            try {
+                // Send the message to our Flask API
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+
+                // Display the result
+                displayResult(data.is_toxic, data.confidence);
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultText.textContent = 'Error analyzing message.';
+                resultText.className = 'text-yellow-400';
+                confidenceText.textContent = '';
+                resultBox.classList.remove('opacity-0', 'scale-95');
+            } finally {
+                // Reset button state
+                analyzeButton.disabled = false;
+                analyzeButton.textContent = 'Analyze Message';
+            }
+        });
+
+        function displayResult(isToxic, confidence) {
+            if (isToxic) {
+                resultText.textContent = 'Toxic';
+                resultText.className = 'text-red-400 text-2xl font-semibold';
+                confidenceText.textContent = `Confidence: ${confidence}`;
+            } else {
+                resultText.textContent = 'Not Toxic';
+                resultText.className = 'text-green-400 text-2xl font-semibold';
+                confidenceText.textContent = `Confidence (of being toxic): ${confidence}`;
+            }
+            resultBox.classList.remove('opacity-0', 'scale-95');
+        }
+    </script>
+
+</body>
+</html>

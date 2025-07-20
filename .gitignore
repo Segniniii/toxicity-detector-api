@@ -1,0 +1,16 @@
+# Ignore the Python virtual environment
+venv/
+
+# Ignore large data files
+*.csv
+
+# Ignore trained model and vectorizer files
+*.joblib
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore VS Code specific settings
+.vscode/
