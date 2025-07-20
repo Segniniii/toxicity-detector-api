@@ -1,116 +1,126 @@
 # main_data_prep.py
 
-# --- 1. Import Necessary Libraries ---
-import pandas as pd
-import numpy as np
-import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
+# --- 1. Import Libraries ---
+# Used for data manipulation and reading CSV files.
+import pandas as pd 
+# Although not used directly, pandas depends on numpy.
+import numpy as np 
+# Essential for text pattern matching and removal (e.g., punctuation).
+import re 
+# The Natural Language Toolkit, our primary library for NLP tasks.
+import nltk 
+# For accessing lists of common words (stopwords) to filter out.
+from nltk.corpus import stopwords 
+# For reducing words to their base/dictionary form (lemmatization).
+from nltk.stem import WordNetLemmatizer 
 
-# --- First-time NLTK setup ---
+# --- Note on NLTK Data ---
+# The first time you run any NLTK process, it may need to download necessary
+# data packages. If you encounter a LookupError, you can run the following
+# lines in a Python interactive session to download them manually:
+# import nltk
+# nltk.download('punkt')
+# nltk.download('stopwords')
+# nltk.download('wordnet')
+# nltk.download('omw-1.4')
+# nltk.download('punkt_tab')
 
-# Run the script with these lines UNCOMMENTED once.
-# After it succeeds, you can comment them out again.
-#print("--- Downloading NLTK data (first-time setup) ---")
-#nltk.download('punkt')
-# Adding the missing 'punkt_tab' resource
-#nltk.download('punkt_tab')
-#nltk.download('stopwords')
-#nltk.download('wordnet')
-#nltk.download('omw-1.4') # Open Multilingual Wordnet
-#print("--- NLTK data download complete ---")
-
-# --- 2. Load and Explore the Data ---
+# --- 2. Data Loading and Initial Transformation ---
 
 def load_and_explore_data(filepath):
     """
-    Loads the dataset, displays basic info, and creates a binary 'is_toxic' label.
+    Loads the raw dataset from a CSV file, creates a simplified binary 'is_toxic' 
+    label, and provides an initial overview of the data.
     """
-    print("--- Loading and Exploring Data ---")
+    print("--- Phase 1: Loading and Exploring Data ---")
     
-    # Load the training data from the CSV file
     try:
         df = pd.read_csv(filepath)
     except FileNotFoundError:
         print(f"Error: The file '{filepath}' was not found.")
-        print("Please make sure you have downloaded the data and placed it in the correct directory.")
+        print("Please ensure you have downloaded the data from Kaggle and it's in the correct directory.")
         return None
 
-    print("Dataset loaded successfully. Here are the first 5 rows:")
+    print("Dataset loaded successfully. Displaying first 5 rows:")
     print(df.head())
-    print("\nDataset Info:")
+    print("\nDataset Information:")
     df.info()
 
-    # Define the columns that indicate toxicity
+    # Define the columns that represent various forms of toxicity.
     toxic_cols = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
     
-    # Create a single binary 'is_toxic' column
-    # If any of the toxic_cols is 1, then is_toxic will be 1, otherwise 0.
+    # Create a single 'is_toxic' column. A comment is marked as toxic (1) 
+    # if it's flagged in any of the toxic categories, otherwise it's non-toxic (0).
     df['is_toxic'] = df[toxic_cols].max(axis=1)
 
-    print("\nDistribution of the new 'is_toxic' label:")
+    print("\nDistribution of 'is_toxic' vs. 'not_toxic' comments:")
+    # `normalize=True` shows the distribution as a percentage.
     print(df['is_toxic'].value_counts(normalize=True))
     
-    # We only need the comment text and our new label for the next phase
+    # For our model, we only need the comment text and our new binary label.
+    # We create a copy to avoid SettingWithCopyWarning in pandas.
     df_processed = df[['comment_text', 'is_toxic']].copy()
     
-    print("\nCreated a simplified DataFrame with 'comment_text' and 'is_toxic'.")
+    print("\nCreated a simplified DataFrame for preprocessing.")
     return df_processed
 
 
-# --- 3. Preprocess the Text Data ---
+# --- 3. Text Preprocessing Function ---
 
 def preprocess_text(text):
     """
-    Cleans and prepares a single text comment for modeling.
+    Applies a series of cleaning steps to a single string of text to prepare
+    it for machine learning.
     """
-    # Initialize lemmatizer and stopwords
+    # Initialize NLTK tools.
     lemmatizer = WordNetLemmatizer()
+    # Using a set provides a significant speed-up for checking stopwords.
     stop_words = set(stopwords.words('english'))
 
-    # 1. Lowercasing
+    # Step 1: Convert all text to lowercase.
     text = text.lower()
     
-    # 2. Remove special characters, numbers, and extra whitespace
-    # Keep only letters and spaces
+    # Step 2: Use regular expressions to remove anything that is not a letter or space.
     text = re.sub(r'[^a-z\s]', '', text)
     
-    # 3. Tokenization (split text into words)
+    # Step 3: Split the text into a list of individual words (tokens).
     tokens = nltk.word_tokenize(text)
     
-    # 4. Remove stopwords and lemmatize
+    # Step 4: Remove stopwords and apply lemmatization to each word.
+    # This list comprehension is an efficient way to build the cleaned list.
     cleaned_tokens = [
         lemmatizer.lemmatize(word) for word in tokens if word not in stop_words
     ]
     
-    # 5. Join tokens back into a single string
+    # Step 5: Join the cleaned tokens back into a single string.
     return " ".join(cleaned_tokens)
 
 
-# --- Main Execution ---
+# --- Main Execution Block ---
 if __name__ == '__main__':
-    # --- Set the file path to your data ---
-    # The 'r' before the string is CRITICAL. It makes it a "raw string" and
-    # prevents the SyntaxError you were seeing.
-    DATA_FILEPATH = r'C:\Users\ViG-CSAgent\Desktop\TOXIC CHAT\train.csv'
+    # Define the path to the raw data file.
+    # Using a raw string (r'...') is crucial on Windows to prevent path errors.
+    DATA_FILEPATH = r'train.csv'
     
+    # Load and perform initial transformation on the data.
     df = load_and_explore_data(DATA_FILEPATH)
     
+    # Proceed only if the DataFrame was loaded successfully.
     if df is not None:
-        print("\n--- Preprocessing Text Data ---")
+        print("\n--- Phase 2: Preprocessing Text Data ---")
         print("This will process the entire dataset and may take several minutes...")
         
-        # Apply the preprocessing function to the 'comment_text' column
+        # Apply our cleaning function to every comment in the 'comment_text' column.
         df['clean_comment'] = df['comment_text'].apply(preprocess_text)
         
-        # Fill any potential empty rows in 'clean_comment' that might result from preprocessing
+        # A safety check: if a comment becomes empty after cleaning, fill it with an empty string.
         df['clean_comment'].fillna('', inplace=True)
 
-        print("\nPreprocessing complete. Here's a sample of the original vs. cleaned comments:")
+        print("\nPreprocessing complete. Here's a sample of the results:")
         print(df[['comment_text', 'clean_comment', 'is_toxic']].head())
 
-        # Save the processed data to a new file to use in the next phase
+        # Save the fully processed data to a new CSV file for the next phase (model training).
         processed_filepath = 'processed_toxic_comments.csv'
         df.to_csv(processed_filepath, index=False)
         print(f"\nProcessed data saved to '{processed_filepath}'")
+
