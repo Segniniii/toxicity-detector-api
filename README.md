@@ -25,6 +25,8 @@ The project is broken down into several phases:
 3.  **API Development:** A Flask server (`app.py`) provides a `/predict` endpoint that takes a text message, preprocesses it in the same way as the training data, and returns a JSON response with the model's prediction.
 4.  **Containerization:** The entire application is packaged into a Docker container using a `Dockerfile`. This creates a consistent and isolated environment, ensuring the application runs the same way everywhere.
 
+<img width="657" height="466" alt="image" src="https://github.com/user-attachments/assets/968b3297-082b-4783-979b-63e182fa07b7" />
+
 ---
 
 ## Tech Stack
